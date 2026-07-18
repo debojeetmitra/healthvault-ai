@@ -2,6 +2,9 @@ import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import errorHandler from "./middleware/errorHandler";
+import authRoutes from "./routes/auth.routes";
+import reportRoutes from "./routes/report.routes";
+import permissionRoutes from "./routes/permission.routes";
 
 const createApp = (): Application => {
   const app = express();
@@ -27,9 +30,9 @@ const createApp = (): Application => {
   });
 
   // ─── API Routes ───────────────────────────────────────────────────────────
-  // Routes will be mounted here as features are built, e.g.:
-  // app.use("/api/auth", authRouter);
-  // app.use("/api/reports", reportsRouter);
+  app.use("/api/auth", authRoutes);
+  app.use("/api/reports", reportRoutes);
+  app.use("/api/permissions", permissionRoutes);
 
   // ─── Global Error Handler (must be last) ─────────────────────────────────
   app.use(errorHandler);
