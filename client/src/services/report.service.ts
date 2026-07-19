@@ -5,3 +5,8 @@ export const uploadReport = async (payload: UploadReportPayload): Promise<{ succ
   const response = await api.post("/reports", payload);
   return response.data;
 };
+
+export const getReports = async (): Promise<{ success: boolean; count: number; reports: MedicalReport[] }> => {
+  const response = await api.get("/reports");
+  return response.data;
+};

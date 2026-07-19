@@ -85,6 +85,36 @@ export const createReport = async (
       $push: { reports: report._id }
     });
 
+    if (process.env.GROQ_API_KEY) {
+      try {
+        const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "llama-3.1-8b-instant",
+            messages: [
+              { role: "system", content: "You are a medical assistant. Provide a very short, concise summary (max 3 sentences) of the uploaded medical report based on its title and category." },
+              { role: "user", content: `Please summarize the medical report titled "${title}" of type "${reportType}".` }
+            ]
+          })
+        });
+
+        if (groqResponse.ok) {
+          const groqData = await groqResponse.json();
+          const aiSummary = groqData.choices?.[0]?.message?.content?.trim();
+          if (aiSummary) {
+            report.aiSummary = aiSummary;
+            await report.save();
+          }
+        }
+      } catch (err) {
+        console.error("Groq API error:", err);
+      }
+    }
+
     res.status(201).json({
       success: true,
       report,

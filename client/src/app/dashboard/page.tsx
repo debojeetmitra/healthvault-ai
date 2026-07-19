@@ -24,11 +24,24 @@ import {
 import useAuth from "@/hooks/useAuth";
 import { buttonVariants } from "@/components/ui/button";
 import UploadReportModal from "@/components/reports/UploadReportModal";
+import { getReports } from "@/services/report.service";
+import { MedicalReport } from "@/types/report";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, isHydrated, logout } = useAuth();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [reports, setReports] = useState<MedicalReport[]>([]);
+
+  useEffect(() => {
+    if (user && user.role === "patient") {
+      getReports()
+        .then((res) => {
+          if (res.success) setReports(res.reports);
+        })
+        .catch(console.error);
+    }
+  }, [user]);
 
   useEffect(() => {
     // CRITICAL: Wait for hydration before checking auth.
@@ -274,17 +287,14 @@ export default function DashboardPage() {
                 <div className="space-y-4">
                   <div className="p-4 rounded-xl border border-emerald-500/10 bg-emerald-500/5">
                     <h4 className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-2 uppercase tracking-wide">
-                      AI Explanation: Metabolic Panel
+                      AI Explanation: {reports[0]?.title || "Metabolic Panel"}
                     </h4>
                     <p className="text-xs text-foreground leading-relaxed">
-                      Your recent lab results indicate excellent blood glucose regulation and optimal
-                      hydration. LDL cholesterol shows a minor increase compared to your previous
-                      baseline metrics, suggesting focused dietary adaptations. All renal indicators
-                      reside comfortably within the nominal standard bounds.
+                      {reports[0]?.aiSummary || "Your recent lab results indicate excellent blood glucose regulation and optimal hydration. LDL cholesterol shows a minor increase compared to your previous baseline metrics, suggesting focused dietary adaptations. All renal indicators reside comfortably within the nominal standard bounds."}
                     </p>
                   </div>
                   <p className="text-[10px] text-muted-foreground text-center">
-                    Summaries are generated privately using the Google Gemini model.
+                    Summaries are generated privately using the Groq AI model.
                   </p>
                 </div>
               </div>

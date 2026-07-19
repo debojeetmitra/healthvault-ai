@@ -6,6 +6,7 @@ export interface MedicalReport {
   patient: string;
   uploadedBy: string;
   createdAt: string;
+  aiSummary?: string;
 }
 
 export interface UploadReportPayload {
