@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { Permission, MedicalReport, Doctor } from "../models";
 import { AppError } from "../middleware/errorHandler";
+import * as blockchainService from "../services/blockchain.service";
 
 /**
  * POST /api/permissions/grant
@@ -43,15 +44,21 @@ export const grantPermission = async (
       error.statusCode = 404;
       return next(error);
     }
-
+// 3. Record permission grant on Midnight blockchain
+const midnightTxHash = await blockchainService.grantPermission(
+  
+   patientId,
+  doctorId,
+  reportId
+);
     // 3. Upsert permission record
     const permission = await Permission.findOneAndUpdate(
       { patient: patientId, doctor: doctorId, report: reportId },
-      { 
-        status: "granted", 
-        grantedAt: new Date(),
-        // midnightTxHash is left alone/null for future integration
-      },
+      {
+  status: "granted",
+  grantedAt: new Date(),
+  midnightTxHash
+},
       { upsert: true, new: true }
     );
 
@@ -97,14 +104,20 @@ export const revokePermission = async (
       error.statusCode = 404;
       return next(error);
     }
-
+// Record permission revocation on Midnight blockchain
+const midnightTxHash = await blockchainService.revokePermission(
+  patientId,
+  doctorId,
+  reportId
+);
     // 2. Update permission record
     const permission = await Permission.findOneAndUpdate(
       { patient: patientId, doctor: doctorId, report: reportId },
-      { 
-        status: "revoked", 
-        revokedAt: new Date() 
-      },
+      {
+  status: "revoked",
+  revokedAt: new Date(),
+  midnightTxHash
+},
       { new: true }
     );
 

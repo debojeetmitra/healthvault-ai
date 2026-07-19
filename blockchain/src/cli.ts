@@ -170,7 +170,7 @@ if (deployed.callTx) {
   console.log(Object.keys(deployed.callTx));
 }
 
-process.exit(0);
+
 
     console.log('  ✅ Connected!\n');
 
@@ -178,8 +178,8 @@ process.exit(0);
     let running = true;
     while (running) {
       console.log('─── Menu ───────────────────────────────────────────────────────');
-      console.log('  1. Store a message');
-      console.log('  2. Read current message');
+      console.log('  1. Grant Report Permission');
+      console.log('  2. View Latest Permission');
       console.log('  3. Check wallet balance');
       console.log('  4. Exit\n');
 
@@ -187,35 +187,60 @@ process.exit(0);
 
       switch (choice.trim()) {
         case '1': {
-          const message = await rl.question('  Enter your message: ');
-          console.log('\n  Submitting transaction (this may take 30-60 seconds)...');
-          try {
-            const tx = await deployed.callTx.storeMessage(message);
-            console.log(`\n  ✅ Message stored: "${message}"`);
-            console.log(`  Transaction ID: ${tx.public.txId}`);
-            console.log(`  Block height: ${tx.public.blockHeight}\n`);
-          } catch (error) {
-            console.error('\n  ❌ Failed:', error instanceof Error ? error.message : error);
-          }
-          break;
-        }
+  const patientId = await rl.question('  Patient ID: ');
+  const doctorId = await rl.question('  Doctor ID: ');
+  const reportId = await rl.question('  Report ID: ');
+
+  const permissionData = JSON.stringify({
+    patientId,
+    doctorId,
+    reportId,
+    grantedAt: new Date().toISOString(),
+  });
+
+  console.log('\n  Submitting Grant Permission transaction...');
+
+  try {
+    const tx = await deployed.callTx.grantPermission(permissionData);
+
+    console.log('\n✅ Permission Granted!');
+    console.log(`Transaction ID: ${tx.public.txId}`);
+    console.log(`Block Height: ${tx.public.blockHeight}`);
+  } catch (error) {
+    console.error('\n❌ Failed:', error);
+  }
+
+  break;
+}
 
         case '2': {
-          console.log('\n  Reading message from blockchain...');
-          try {
-            const contractState = await providers.publicDataProvider.queryContractState(deployment.address);
-            if (contractState) {
-              const ledgerState = HelloWorld.ledger(contractState.data);
-              const message = Buffer.from(ledgerState.message).toString();
-              console.log(`\n  📋 Current message: "${message}"\n`);
-            } else {
-              console.log('\n  📋 No message found (contract state empty)\n');
-            }
-          } catch (error) {
-            console.error('\n  ❌ Failed:', error instanceof Error ? error.message : error);
-          }
-          break;
-        }
+  console.log('\n  Reading latest permission event...');
+
+  try {
+    const contractState = await providers.publicDataProvider.queryContractState(
+      deployment.address
+    );
+
+    if (contractState) {
+      const ledgerState = HelloWorld.ledger(contractState.data);
+
+      const permissionEvent = ledgerState.permissionEvent;
+
+      console.log('\n📋 Latest Permission Event:');
+      console.log(permissionEvent);
+      console.log();
+    } else {
+      console.log('\nNo permission event found.\n');
+    }
+  } catch (error) {
+    console.error(
+      '\n❌ Failed:',
+      error instanceof Error ? error.message : error
+    );
+  }
+
+  break;
+}
 
         case '3': {
           console.log('\n  Checking balance...');
