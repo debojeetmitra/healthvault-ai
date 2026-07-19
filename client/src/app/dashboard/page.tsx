@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -23,10 +23,12 @@ import {
 } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
 import { buttonVariants } from "@/components/ui/button";
+import UploadReportModal from "@/components/reports/UploadReportModal";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, isHydrated, logout } = useAuth();
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   useEffect(() => {
     // CRITICAL: Wait for hydration before checking auth.
@@ -128,6 +130,7 @@ export default function DashboardPage() {
           </div>
           {isPatient && (
             <button
+              onClick={() => setIsUploadModalOpen(true)}
               className={buttonVariants({
                 variant: "default",
                 className:
@@ -464,6 +467,7 @@ export default function DashboardPage() {
           </div>
         )}
 
+        <UploadReportModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} />
       </main>
     </div>
   );
