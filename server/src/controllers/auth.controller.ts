@@ -70,6 +70,7 @@ export const register = async (
 
     // Remove password from response
     delete userObj.password;
+    userObj.role = role;
 
     res.status(201).json({
       success: true,
@@ -134,6 +135,7 @@ export const login = async (
     // Remove password from response
     const userObj = user.toObject();
     delete (userObj as any).password;
+    (userObj as any).role = role;
 
     res.status(200).json({
       success: true,
@@ -172,9 +174,12 @@ export const getMe = async (
       return next(error);
     }
 
+    const userObj = user.toObject();
+    (userObj as any).role = role;
+
     res.status(200).json({
       success: true,
-      user,
+      user: userObj,
     });
   } catch (error) {
     next(error);

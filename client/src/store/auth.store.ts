@@ -10,6 +10,9 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  // True once hydrate() has finished reading from localStorage.
+  // Protected pages must wait for this before redirecting.
+  isHydrated: boolean;
 }
 
 // ─── Actions Shape ────────────────────────────────────────────────────────────
@@ -30,6 +33,7 @@ const useAuthStore = create<AuthState & AuthActions>((set) => ({
   token: null,
   isAuthenticated: false,
   isLoading: false,
+  isHydrated: false,
 
   setUser: (user) =>
     set({
@@ -59,6 +63,9 @@ const useAuthStore = create<AuthState & AuthActions>((set) => ({
       token: null,
       isAuthenticated: false,
       isLoading: false,
+      // isHydrated stays true — the app has already checked localStorage,
+      // the user simply chose to log out.
+      isHydrated: true,
     });
   },
 
@@ -68,7 +75,11 @@ const useAuthStore = create<AuthState & AuthActions>((set) => ({
   hydrate: () => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (token) {
-      set({ token });
+      set({ token, isHydrated: true });
+    } else {
+      // No token in storage — mark as hydrated so pages know
+      // the check is complete and can redirect to login safely.
+      set({ isHydrated: true });
     }
   },
 }));

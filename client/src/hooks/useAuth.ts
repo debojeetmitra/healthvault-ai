@@ -9,6 +9,7 @@ export default function useAuth() {
   const token = useAuthStore((s) => s.token);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
+  const isHydrated = useAuthStore((s) => s.isHydrated);
   const setUser = useAuthStore((s) => s.setUser);
   const setToken = useAuthStore((s) => s.setToken);
   const logout = useAuthStore((s) => s.logout);
@@ -18,6 +19,7 @@ export default function useAuth() {
     token,
     isAuthenticated,
     isLoading,
+    isHydrated,
     setUser,
     setToken,
     logout,
