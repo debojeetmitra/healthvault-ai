@@ -88,6 +88,3 @@ The doctor can instantly view the history, while a built-in AI assistant summari
 | **Yeshaswini** | Midnight Blockchain, Smart Contracts, Wallet, & Permission Integration |
 | **Paramita** | UI Improvements, Testing & Documentation|
 
-## Project Demo 
-
-_(to be added after the code initialization)_
