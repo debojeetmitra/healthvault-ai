@@ -1,0 +1,20 @@
+pragma language_version >= 0.23;
+
+import CompactStandardLibrary;
+
+// Stores the latest permission event on-chain
+export ledger permissionEvent: Opaque<"string">;
+
+// Initialize contract
+export circuit initialize(): [] {
+}
+
+// Grant permission
+export circuit grantPermission(permissionData: Opaque<"string">): [] {
+    permissionEvent = disclose(permissionData);
+}
+
+// Revoke permission
+export circuit revokePermission(permissionData: Opaque<"string">): [] {
+    permissionEvent = disclose(permissionData);
+}
