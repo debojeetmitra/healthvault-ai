@@ -8,6 +8,18 @@ Patients can securely upload medical reports, receive AI-powered explanations, a
 
 ---
 
+## Core Modules
+
+- Authentication
+- Patient Dashboard
+- Doctor Dashboard
+- Medical Report Management
+- AI Report Summary
+- Blockchain Permission Management
+- Audit Logs
+
+---
+
 ## Tech Stack
 
 ### Frontend
