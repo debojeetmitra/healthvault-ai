@@ -48,8 +48,12 @@ The doctor can instantly view the history, while a built-in AI assistant summari
 
 ## Installation 
 
-_(to be added after code initiallization)_
+## Installation 
 
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/debojeetmitra/healthvault-ai.git
+   cd healthvault-ai
 ---
 
 ## Key Features 
