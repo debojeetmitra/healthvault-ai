@@ -1,13 +1,17 @@
 import React, { useState } from "react";
 import { Upload, X, FileText, AlertCircle, CheckCircle2 } from "lucide-react";
 import { uploadReport } from "../../services/report.service";
+import { MedicalReport } from "../../types/report";
+import { uploadToCloudinary } from "../../lib/cloudinary";
 
 interface UploadReportModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Called with the newly created report (including aiSummary) on successful upload */
+  onSuccess?: (report: MedicalReport) => void;
 }
 
-export default function UploadReportModal({ isOpen, onClose }: UploadReportModalProps) {
+export default function UploadReportModal({ isOpen, onClose, onSuccess }: UploadReportModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("lab_result");
@@ -41,14 +45,19 @@ export default function UploadReportModal({ isOpen, onClose }: UploadReportModal
     setError("");
 
     try {
-      // Mocking file upload to a storage service for this phase
-      const mockFileUrl = URL.createObjectURL(file);
-      
-      await uploadReport({
+      // Upload file to Cloudinary first
+      const cloudinaryUrl = await uploadToCloudinary(file);
+
+      const result = await uploadReport({
         title,
         reportType: category,
-        fileUrl: mockFileUrl,
+        fileUrl: cloudinaryUrl,
       });
+
+      // Notify parent with the full report object (includes aiSummary from Groq)
+      if (result.success && result.report) {
+        onSuccess?.(result.report);
+      }
 
       setIsSuccess(true);
       setTimeout(() => {
@@ -59,7 +68,7 @@ export default function UploadReportModal({ isOpen, onClose }: UploadReportModal
         onClose();
       }, 2000);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to upload report.");
+      setError(err.response?.data?.message || err.message || "Failed to upload report.");
     } finally {
       setIsUploading(false);
     }
@@ -85,7 +94,7 @@ export default function UploadReportModal({ isOpen, onClose }: UploadReportModal
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <CheckCircle2 className="size-16 text-emerald-500 mb-4" />
             <h3 className="text-lg font-semibold text-foreground">Upload Successful!</h3>
-            <p className="text-sm text-muted-foreground">Your report has been securely vaulted.</p>
+            <p className="text-sm text-muted-foreground">Your report has been vaulted and AI summary generated.</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">

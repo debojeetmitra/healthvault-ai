@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -20,6 +20,8 @@ import {
   Lock,
   Eye,
   FileSpreadsheet,
+  Brain,
+  Loader2,
 } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
 import { buttonVariants } from "@/components/ui/button";
@@ -32,16 +34,35 @@ export default function DashboardPage() {
   const { user, isAuthenticated, isLoading, isHydrated, logout } = useAuth();
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [reports, setReports] = useState<MedicalReport[]>([]);
+  const [isReportsLoading, setIsReportsLoading] = useState(false);
 
-  useEffect(() => {
-    if (user && user.role === "patient") {
-      getReports()
-        .then((res) => {
-          if (res.success) setReports(res.reports);
-        })
-        .catch(console.error);
+  const fetchReports = useCallback(async () => {
+    if (!user || user.role !== "patient") return;
+    setIsReportsLoading(true);
+    try {
+      const res = await getReports();
+      if (res.success) setReports(res.reports);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsReportsLoading(false);
     }
   }, [user]);
+
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
+
+  /**
+   * Called by UploadReportModal on success.
+   * Immediately prepends the new report (with aiSummary) to local state,
+   * then re-fetches the full list as a safety net.
+   */
+  const handleReportUploaded = useCallback((newReport: MedicalReport) => {
+    setReports((prev) => [newReport, ...prev]);
+    // Re-fetch in background to ensure server-side order / data is canonical
+    fetchReports();
+  }, [fetchReports]);
 
   useEffect(() => {
     // CRITICAL: Wait for hydration before checking auth.
@@ -202,76 +223,84 @@ export default function DashboardPage() {
                     <FileText className="size-4 text-teal-500" />
                     Medical Reports
                   </h3>
-                  <span className="text-xs text-muted-foreground font-medium">3 documents stored</span>
+                  <span className="text-xs text-muted-foreground font-medium">
+                    {reports.length} document{reports.length !== 1 ? "s" : ""} stored
+                  </span>
                 </div>
 
-                <div className="space-y-4">
-                  {/* Report 1 */}
-                  <div className="p-4 border border-border rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                      <FileSpreadsheet className="size-10 text-emerald-500 shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="text-sm font-semibold text-foreground">Comprehensive Metabolic Panel</h4>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                          <Calendar className="size-3" /> July 18, 2026 &bull; Lab Result
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 self-end sm:self-auto">
-                      <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2.5 py-0.5 rounded-full">
-                        AI Summarized
-                      </span>
-                      <button className={buttonVariants({ variant: "outline", size: "sm", className: "gap-1 py-4" })}>
-                        <Eye className="size-3.5" />
-                        View
-                      </button>
-                    </div>
+                {isReportsLoading && reports.length === 0 ? (
+                  <div className="flex items-center justify-center py-8 text-muted-foreground">
+                    <Loader2 className="size-5 animate-spin mr-2" />
+                    <span className="text-sm">Loading reports...</span>
                   </div>
-
-                  {/* Report 2 */}
-                  <div className="p-4 border border-border rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                      <FileText className="size-10 text-emerald-500 shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="text-sm font-semibold text-foreground">Cardiology Assessment &amp; ECG</h4>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                          <Calendar className="size-3" /> July 15, 2026 &bull; Diagnostics
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 self-end sm:self-auto">
-                      <span className="text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2.5 py-0.5 rounded-full">
-                        Processing AI
-                      </span>
-                      <button className={buttonVariants({ variant: "outline", size: "sm", className: "gap-1 py-4" })}>
-                        <Eye className="size-3.5" />
-                        View
-                      </button>
-                    </div>
+                ) : reports.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <FileText className="size-10 text-muted-foreground/30 mb-3" />
+                    <p className="text-sm text-muted-foreground">No reports uploaded yet.</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">Upload your first medical report to get started.</p>
                   </div>
-
-                  {/* Report 3 */}
-                  <div className="p-4 border border-border rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                      <FileText className="size-10 text-emerald-500 shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="text-sm font-semibold text-foreground">Immunization History Update</h4>
-                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                          <Calendar className="size-3" /> July 10, 2026 &bull; Other
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 self-end sm:self-auto">
-                      <span className="text-[10px] font-bold bg-zinc-500/10 text-zinc-700 dark:text-zinc-400 px-2.5 py-0.5 rounded-full">
-                        No AI summary
-                      </span>
-                      <button className={buttonVariants({ variant: "outline", size: "sm", className: "gap-1 py-4" })}>
-                        <Eye className="size-3.5" />
-                        View
-                      </button>
-                    </div>
+                ) : (
+                  <div className="space-y-4">
+                    {reports.map((report) => {
+                      const hasAiSummary = Boolean(report.aiSummary && report.aiSummary.trim().length > 0);
+                      const typeLabel: Record<string, string> = {
+                        lab_result: "Lab Result",
+                        prescription: "Prescription",
+                        imaging: "Imaging",
+                        discharge_summary: "Discharge Summary",
+                        other: "Other",
+                      };
+                      return (
+                        <div
+                          key={report._id}
+                          className="p-4 border border-border rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-start gap-3">
+                              <FileSpreadsheet className="size-10 text-emerald-500 shrink-0 mt-0.5" />
+                              <div>
+                                <h4 className="text-sm font-semibold text-foreground">{report.title}</h4>
+                                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                                  <Calendar className="size-3" />
+                                  {new Date(report.createdAt).toLocaleDateString("en-US", {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  })}
+                                  &bull; {typeLabel[report.reportType] ?? report.reportType}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 self-end sm:self-auto shrink-0">
+                              {hasAiSummary ? (
+                                <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                  <Brain className="size-3" />
+                                  AI Summarized
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold bg-zinc-500/10 text-zinc-700 dark:text-zinc-400 px-2.5 py-0.5 rounded-full">
+                                  No AI Summary
+                                </span>
+                              )}
+                              <button className={buttonVariants({ variant: "outline", size: "sm", className: "gap-1 py-4" })}>
+                                <Eye className="size-3.5" />
+                                View
+                              </button>
+                            </div>
+                          </div>
+                          {/* AI Summary snippet shown inline when available */}
+                          {hasAiSummary && (
+                            <div className="mt-3 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10">
+                              <p className="text-[11px] text-foreground/80 leading-relaxed line-clamp-3">
+                                {report.aiSummary}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
+                )}
               </div>
             </div>
 
@@ -477,7 +506,11 @@ export default function DashboardPage() {
           </div>
         )}
 
-        <UploadReportModal isOpen={isUploadModalOpen} onClose={() => setIsUploadModalOpen(false)} />
+        <UploadReportModal
+          isOpen={isUploadModalOpen}
+          onClose={() => setIsUploadModalOpen(false)}
+          onSuccess={handleReportUploaded}
+        />
       </main>
     </div>
   );
