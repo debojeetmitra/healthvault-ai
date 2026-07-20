@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Upload, X, FileText, AlertCircle, CheckCircle2 } from "lucide-react";
 import { uploadReport } from "../../services/report.service";
 import { MedicalReport } from "../../types/report";
+import { uploadToCloudinary } from "../../lib/cloudinary";
 
 interface UploadReportModalProps {
   isOpen: boolean;
@@ -44,13 +45,13 @@ export default function UploadReportModal({ isOpen, onClose, onSuccess }: Upload
     setError("");
 
     try {
-      // Mocking file upload to a storage service for this phase
-      const mockFileUrl = URL.createObjectURL(file);
+      // Upload file to Cloudinary first
+      const cloudinaryUrl = await uploadToCloudinary(file);
 
       const result = await uploadReport({
         title,
         reportType: category,
-        fileUrl: mockFileUrl,
+        fileUrl: cloudinaryUrl,
       });
 
       // Notify parent with the full report object (includes aiSummary from Groq)
@@ -67,7 +68,7 @@ export default function UploadReportModal({ isOpen, onClose, onSuccess }: Upload
         onClose();
       }, 2000);
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to upload report.");
+      setError(err.response?.data?.message || err.message || "Failed to upload report.");
     } finally {
       setIsUploading(false);
     }
